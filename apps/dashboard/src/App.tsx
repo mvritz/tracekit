@@ -7,11 +7,14 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
-  ChevronRight,
   Columns2,
   Download,
   GitBranch,
   Layers3,
+  Command,
+  CodeXml,
+  Home,
+  CalendarDays,
   RefreshCw,
   Search,
   Terminal,
@@ -30,6 +33,7 @@ import {
   exportFixture,
   matchedSpans,
 } from './lib/api';
+import { OverviewCards, CollectionSummary } from './components/OverviewCards';
 import { SpanWaterfall } from './components/SpanWaterfall';
 import { CopyButton, SpanInspector } from './components/SpanInspector';
 function readHash() {
@@ -44,6 +48,9 @@ export function App() {
   });
   const [trace, setTrace] = useState(readHash);
   const [view, setView] = useState<'traces' | 'compare' | 'setup'>('traces');
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [trace, view]);
   const [search, setSearch] = useState(''),
     [status, setStatus] = useState(''),
     [mode, setMode] = useState(''),
@@ -51,7 +58,7 @@ export function App() {
     [windowMs, setWindowMs] = useState('');
   const [cursors, setCursors] = useState<(string | undefined)[]>([undefined]);
   const cursor = cursors.at(-1);
-  const params = new URLSearchParams({ limit: '25' });
+  const params = new URLSearchParams({ limit: '6' });
   if (search) params.set('q', search);
   if (status) params.set('status', status);
   if (mode) params.set('mode', mode);
@@ -83,78 +90,53 @@ export function App() {
   const items = query.data?.items ?? [];
   return (
     <div className="app">
-      <aside className="sidebar">
-        <a href="#" className="brand" aria-label="TraceKit home" onClick={() => openTrace(null)}>
-          <span className="brand-mark">
-            <Activity size={22} />
+      <header className="topbar">
+        <a
+          href="#"
+          className="workspace-identity"
+          onClick={() => openTrace(null)}
+          aria-label="TraceKit home"
+        >
+          <span className="workspace-avatar">
+            <Activity size={21} />
           </span>
           <span>
-            TraceKit<span className="brand-version">0.1</span>
+            <strong>TraceKit</strong>
+            <small>Local observability</small>
           </span>
         </a>
-        <div className="workspace-label">Workspace</div>
-        <button
-          className={`nav-item ${view === 'traces' ? 'active' : ''}`}
-          onClick={() => {
-            setView('traces');
-            openTrace(null);
-          }}
-        >
-          <Layers3 size={17} />
-          Traces
-          <ChevronRight size={14} />
-        </button>
-        <button
-          className={`nav-item ${view === 'compare' ? 'active' : ''}`}
-          onClick={() => setView('compare')}
-        >
-          <Columns2 size={17} />
-          Replay comparison
-        </button>
-        <div className="sidebar-bottom">
-          <div className="local-label">
+        <span className="workspace-location">
+          <span className="workspace-light" />
+          Local workspace
+        </span>
+        <div className="topbar-actions">
+          <span className={`local-badge ${query.isError ? 'offline' : ''}`}>
             <span className={`connection-dot ${query.isError ? 'offline' : ''}`} />
-            <span>{query.isError ? 'Collector offline' : 'Local collector'}</span>
-          </div>
-          <code>127.0.0.1:4319</code>
-          <button
-            className={`nav-item ${view === 'setup' ? 'active' : ''}`}
-            onClick={() => setView('setup')}
-          >
-            <BookOpen size={16} />
-            Local setup
-          </button>
-          <a
-            className="source-link"
-            href="https://github.com/mvritz/tracekit"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open source on GitHub
-            <ArrowRight size={13} />
-          </a>
-        </div>
-      </aside>
-      <main>
-        <header className="topbar">
-          <div>
-            <span>Local workspace</span>
-            <ChevronRight size={12} />
-            <strong>
-              {view === 'compare' ? 'Replay comparison' : view === 'setup' ? 'Setup' : 'Traces'}
-            </strong>
-            {trace && view === 'traces' && (
-              <>
-                <ChevronRight size={12} />
-                <span className="mono">{trace.slice(0, 8)}</span>
-              </>
-            )}
-          </div>
-          <span className="local-badge">
-            <span className="connection-dot" />
-            Local-first · SQLite
+            {query.isPending
+              ? 'Connecting'
+              : query.isError
+                ? 'Collector offline'
+                : 'Collector connected'}
           </span>
-        </header>
+          <button
+            className="workspace-settings icon-button"
+            aria-label="Open local setup"
+            onClick={() => setView('setup')}
+            title="Local setup"
+          >
+            <Command size={17} />
+          </button>
+        </div>
+      </header>
+      <Navigation
+        view={view}
+        connected={!query.isError}
+        onNavigate={(next) => {
+          if (next === 'traces') openTrace(null);
+          else setView(next);
+        }}
+      />
+      <main>
         {(metadata.data?.database_logical_bytes ?? 0) > 262144000 && (
           <div className="connection-banner" role="status">
             Local database exceeds 250 MiB. Retention is manual; stop the collector and back up or
@@ -175,7 +157,7 @@ export function App() {
         ) : trace ? (
           <TraceDetail id={trace} onBack={() => openTrace(null)} />
         ) : (
-          <div className="page">
+          <div className="page overview-page">
             <div className="page-heading">
               <div>
                 <div className="eyebrow">Execution history</div>
@@ -184,186 +166,194 @@ export function App() {
                 </h1>
                 <p>Inspect local agent runs and recorded tool boundaries.</p>
               </div>
-              <button className="button" onClick={() => void query.refetch()}>
-                <RefreshCw size={14} className={query.isFetching ? 'spinning' : ''} />
-                Refresh
-              </button>
-            </div>
-            <div className="metrics">
-              <Metric
-                value={String(items.length).padStart(2, '0')}
-                label="Runs on this page"
-                icon={<Layers3 size={17} />}
-              />
-              <Metric
-                value={String(items.filter((x) => x.mode === 'replay').length).padStart(2, '0')}
-                label="Recorded replays"
-                icon={<GitBranch size={17} />}
-              />
-              <Metric
-                value={String(items.filter((x) => x.status === 'error').length).padStart(2, '0')}
-                label="Runs with errors"
-                icon={<AlertCircle size={17} />}
-              />
-            </div>
-            <div className="section-heading">
-              <h2>Recent traces</h2>
-              <span>
-                <span className={`connection-dot ${query.isError ? 'offline' : ''}`} />
-                {query.isError ? 'Offline' : 'Updates every 2 seconds'}
-              </span>
-            </div>
-            <div className="filters">
-              <label className="search">
-                <Search size={16} />
-                <input
-                  value={search}
-                  onChange={(e) => filter(setSearch, e.target.value)}
-                  placeholder="Search name or trace ID"
-                  aria-label="Search traces"
-                />
-              </label>
-              <label className="sr-only" htmlFor="service">
-                Service
-              </label>
-              <input
-                id="service"
-                className="service-filter"
-                value={service}
-                placeholder="All services"
-                onChange={(e) => filter(setService, e.target.value)}
-              />
-              <select
-                aria-label="Status filter"
-                value={status}
-                onChange={(e) => filter(setStatus, e.target.value)}
-              >
-                <option value="">All statuses</option>
-                <option value="ok">Success</option>
-                <option value="error">Error</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              <select
-                aria-label="Mode filter"
-                value={mode}
-                onChange={(e) => filter(setMode, e.target.value)}
-              >
-                <option value="">All modes</option>
-                <option value="record">Record</option>
-                <option value="replay">Replay</option>
-              </select>
-              <select
-                aria-label="Time window"
-                value={windowMs}
-                onChange={(e) => filter(setWindowMs, e.target.value)}
-              >
-                <option value="">All time</option>
-                <option value="3600000">Last hour</option>
-                <option value="86400000">Last 24 hours</option>
-                <option value="604800000">Last 7 days</option>
-              </select>
-            </div>
-            <div className="table-scroll">
-              <table className="trace-table">
-                <thead>
-                  <tr>
-                    <th>Trace name</th>
-                    <th>Status</th>
-                    <th>Duration</th>
-                    <th>Spans</th>
-                    <th>Mode</th>
-                    <th>
-                      Started <ArrowDown size={12} />
-                    </th>
-                    <th>
-                      <span className="sr-only">Open trace</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr key={item.trace_id}>
-                      <td>
-                        <button className="trace-link" onClick={() => openTrace(item.trace_id)}>
-                          <Activity size={17} />
-                          <span>
-                            <strong>{item.name}</strong>
-                            <small>
-                              {item.service_name}
-                              <span className="mono">{item.trace_id.slice(0, 8)}</span>
-                            </small>
-                          </span>
-                        </button>
-                      </td>
-                      <td>
-                        <Status status={item.status} />
-                      </td>
-                      <td className="mono">{duration(item.duration_ns)}</td>
-                      <td className="mono muted">{item.span_count}</td>
-                      <td>
-                        <Mode mode={item.mode} />
-                      </td>
-                      <td className="mono muted" title={fullTime(item.start_time_unix_ms)}>
-                        {time(item.start_time_unix_ms)}
-                      </td>
-                      <td>
-                        <button
-                          className="icon-button"
-                          aria-label={`Open ${item.name}`}
-                          onClick={() => openTrace(item.trace_id)}
-                        >
-                          <ArrowRight size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {items.length === 0 && (
-              <div className="empty-state">
-                <Layers3 size={30} />
-                <h2>
-                  {query.isPending
-                    ? 'Connecting to your collector…'
-                    : search || status || mode || service
-                      ? 'No matching traces'
-                      : 'Your next run starts here'}
-                </h2>
-                <p>
-                  {search || status || mode || service
-                    ? 'Adjust the filters to find a run.'
-                    : 'Run the offline research agent to inspect a real execution.'}
-                </p>
-                <code>pnpm demo:record</code>
-                <button className="text-button" onClick={() => setView('setup')}>
-                  View setup instructions
-                  <ArrowRight size={14} />
+              <div className="heading-actions">
+                <span className="date-label">
+                  <CalendarDays size={14} />
+                  {new Intl.DateTimeFormat(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  }).format(Date.now())}
+                </span>
+                <button className="button" onClick={() => void query.refetch()}>
+                  <RefreshCw size={14} className={query.isFetching ? 'spinning' : ''} />
+                  Refresh
                 </button>
               </div>
-            )}
-            <footer className="table-footer">
-              <span>{items.length} runs on this page · Newest first</span>
-              <div>
-                <button
-                  className="button"
-                  disabled={cursors.length === 1 || query.isPlaceholderData}
-                  onClick={() => setCursors(cursors.slice(0, -1))}
-                >
-                  <ArrowLeft size={13} />
-                  Previous
-                </button>
-                <span className="mono">{String(cursors.length).padStart(2, '0')}</span>
-                <button
-                  className="button"
-                  disabled={!query.data?.next_cursor || query.isPlaceholderData}
-                  onClick={() => setCursors([...cursors, query.data!.next_cursor!])}
-                >
-                  Next
-                  <ArrowRight size={13} />
-                </button>
-              </div>
-            </footer>
+            </div>
+            <OverviewCards
+              items={items}
+              mode={mode}
+              onModeChange={(value) => filter(setMode, value)}
+              onOpenTrace={openTrace}
+            />
+            <div className="overview-bottom">
+              <CollectionSummary
+                items={items}
+                onRecords={() => filter(setMode, 'record')}
+                onCompare={() => setView('compare')}
+              />
+              <section className="trace-workbench glass-card" aria-label="Recent traces">
+                <div className="section-heading">
+                  <h2>Recent traces</h2>
+                  <span>
+                    <span className={`connection-dot ${query.isError ? 'offline' : ''}`} />
+                    {query.isError ? 'Offline' : 'Updates every 2 seconds'}
+                  </span>
+                </div>
+                <div className="filters">
+                  <label className="search">
+                    <Search size={16} />
+                    <input
+                      value={search}
+                      onChange={(e) => filter(setSearch, e.target.value)}
+                      placeholder="Search name or trace ID"
+                      aria-label="Search traces"
+                    />
+                  </label>
+                  <label className="sr-only" htmlFor="service">
+                    Service
+                  </label>
+                  <input
+                    id="service"
+                    className="service-filter"
+                    value={service}
+                    placeholder="All services"
+                    onChange={(e) => filter(setService, e.target.value)}
+                  />
+                  <select
+                    aria-label="Status filter"
+                    value={status}
+                    onChange={(e) => filter(setStatus, e.target.value)}
+                  >
+                    <option value="">All statuses</option>
+                    <option value="ok">Success</option>
+                    <option value="error">Error</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  <select
+                    aria-label="Mode filter"
+                    value={mode}
+                    onChange={(e) => filter(setMode, e.target.value)}
+                  >
+                    <option value="">All modes</option>
+                    <option value="record">Record</option>
+                    <option value="replay">Replay</option>
+                  </select>
+                  <select
+                    aria-label="Time window"
+                    value={windowMs}
+                    onChange={(e) => filter(setWindowMs, e.target.value)}
+                  >
+                    <option value="">All time</option>
+                    <option value="3600000">Last hour</option>
+                    <option value="86400000">Last 24 hours</option>
+                    <option value="604800000">Last 7 days</option>
+                  </select>
+                </div>
+                <div className="table-scroll">
+                  <table className="trace-table">
+                    <thead>
+                      <tr>
+                        <th>Trace name</th>
+                        <th>Status</th>
+                        <th>Duration</th>
+                        <th>Spans</th>
+                        <th>Mode</th>
+                        <th>
+                          Started <ArrowDown size={12} />
+                        </th>
+                        <th>
+                          <span className="sr-only">Open trace</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((item) => (
+                        <tr key={item.trace_id}>
+                          <td>
+                            <button className="trace-link" onClick={() => openTrace(item.trace_id)}>
+                              <Activity size={17} />
+                              <span>
+                                <strong>{item.name}</strong>
+                                <small>
+                                  {item.service_name}
+                                  <span className="mono">{item.trace_id.slice(0, 8)}</span>
+                                </small>
+                              </span>
+                            </button>
+                          </td>
+                          <td>
+                            <Status status={item.status} />
+                          </td>
+                          <td className="mono">{duration(item.duration_ns)}</td>
+                          <td className="mono muted">{item.span_count}</td>
+                          <td>
+                            <Mode mode={item.mode} />
+                          </td>
+                          <td className="mono muted" title={fullTime(item.start_time_unix_ms)}>
+                            {time(item.start_time_unix_ms)}
+                          </td>
+                          <td>
+                            <button
+                              className="icon-button"
+                              aria-label={`Open ${item.name}`}
+                              onClick={() => openTrace(item.trace_id)}
+                            >
+                              <ArrowRight size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {items.length === 0 && (
+                  <div className="empty-state">
+                    <Layers3 size={30} />
+                    <h2>
+                      {query.isPending
+                        ? 'Connecting to your collector…'
+                        : search || status || mode || service
+                          ? 'No matching traces'
+                          : 'Your next run starts here'}
+                    </h2>
+                    <p>
+                      {search || status || mode || service
+                        ? 'Adjust the filters to find a run.'
+                        : 'Run the offline research agent to inspect a real execution.'}
+                    </p>
+                    <code>pnpm demo:record</code>
+                    <button className="text-button" onClick={() => setView('setup')}>
+                      View setup instructions
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                )}
+                <footer className="table-footer">
+                  <span>{items.length} runs on this page · Newest first</span>
+                  <div>
+                    <button
+                      className="button"
+                      disabled={cursors.length === 1 || query.isPlaceholderData}
+                      onClick={() => setCursors(cursors.slice(0, -1))}
+                    >
+                      <ArrowLeft size={13} />
+                      Previous
+                    </button>
+                    <span className="mono">{String(cursors.length).padStart(2, '0')}</span>
+                    <button
+                      className="button"
+                      disabled={!query.data?.next_cursor || query.isPlaceholderData}
+                      onClick={() => setCursors([...cursors, query.data!.next_cursor!])}
+                    >
+                      Next
+                      <ArrowRight size={13} />
+                    </button>
+                  </div>
+                </footer>
+              </section>
+            </div>
             <div className="page-note">
               <Terminal size={14} />
               <span>Traces stay on this machine. Payload capture is off by default.</span>
@@ -375,15 +365,70 @@ export function App() {
     </div>
   );
 }
-function Metric({ value, label, icon }: { value: string; label: string; icon: React.ReactNode }) {
+function Navigation({
+  view,
+  connected,
+  onNavigate,
+}: {
+  view: 'traces' | 'compare' | 'setup';
+  connected: boolean;
+  onNavigate: (view: 'traces' | 'compare' | 'setup') => void;
+}) {
   return (
-    <div className="metric">
-      <div>
-        <span>{label}</span>
-        {icon}
+    <aside className="sidebar" aria-label="Workspace navigation">
+      <div className="rail-brand" title="TraceKit">
+        <Activity size={20} />
       </div>
-      <strong>{value}</strong>
-    </div>
+      <nav>
+        <button
+          className={`nav-item ${view === 'traces' ? 'active' : ''}`}
+          aria-label="Traces"
+          aria-current={view === 'traces' ? 'page' : undefined}
+          title="Traces"
+          onClick={() => onNavigate('traces')}
+        >
+          <Home size={18} />
+          <span className="nav-label">Traces</span>
+        </button>
+        <button
+          className={`nav-item ${view === 'compare' ? 'active' : ''}`}
+          aria-label="Replay comparison"
+          aria-current={view === 'compare' ? 'page' : undefined}
+          title="Replay comparison"
+          onClick={() => onNavigate('compare')}
+        >
+          <Columns2 size={18} />
+          <span className="nav-label">Replay comparison</span>
+        </button>
+        <button
+          className={`nav-item ${view === 'setup' ? 'active' : ''}`}
+          aria-label="Local setup"
+          aria-current={view === 'setup' ? 'page' : undefined}
+          title="Local setup"
+          onClick={() => onNavigate('setup')}
+        >
+          <BookOpen size={18} />
+          <span className="nav-label">Local setup</span>
+        </button>
+      </nav>
+      <div className="rail-bottom">
+        <span
+          className={`connection-dot ${connected ? '' : 'offline'}`}
+          title={connected ? 'Local collector' : 'Collector offline'}
+        />
+        <a
+          className="nav-item source-link"
+          href="https://github.com/mvritz/tracekit"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Open source on GitHub"
+          title="Open source on GitHub"
+        >
+          <CodeXml size={18} />
+          <span className="nav-label">GitHub</span>
+        </a>
+      </div>
+    </aside>
   );
 }
 export function Status({ status }: { status: TraceSummary['status'] }) {

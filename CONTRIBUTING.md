@@ -37,6 +37,6 @@ pnpm --dir packages/sdk pack
 
 Open an issue for a substantial contract change. Keep PRs focused on behavior and include the relevant verification. Add regression tests for context, serialization, replay, and storage invariants. Keep TS and Rust validation in agreement with shared golden fixtures. Add migrations instead of modifying an already released migration. Never include real traces, credentials, fixture outputs, or environment files.
 
-The dashboard uses plain CSS and a white/gray Swiss grid with one orange accent. Status indicators must have text, focus rings must remain visible, and absent payloads must stay distinct from captured nulls. All trace content must be rendered as escaped text.
+The dashboard uses plain CSS, an original warm interior backdrop, translucent glass panels, and mint/charcoal accents. See docs/visual-design.md for the reference, asset provenance, and layout rules. Status indicators must have text, focus rings must remain visible, and absent payloads must stay distinct from captured nulls. All trace content must be rendered as escaped text.
 
 Benchmarks are manual, reproducible commands, not noisy PR gates. Record machine and tool versions with raw samples. See the [code of conduct](CODE_OF_CONDUCT.md) and [security policy](SECURITY.md).

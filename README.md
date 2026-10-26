@@ -7,7 +7,7 @@ Trace nested async workflows, inspect their execution in a browser, and replay r
 [![CI](https://github.com/mvritz/tracekit/actions/workflows/ci.yml/badge.svg)](https://github.com/mvritz/tracekit/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-![An actual offline demo run showing a validation failure in the execution waterfall](docs/screenshots/trace-detail.png)
+![An actual offline demo run showing a validation failure in the execution waterfall](docs/screenshots/trace-detail.jpg)
 
 > Initial implementation, version 0.1.0. Packages are **not published to npm**. Build from this repository. The screenshot is a real execution of the synthetic offline demo, not a mockup.
 
@@ -97,13 +97,15 @@ Only finalized, complete, explicitly opted-in fixtures can be exported. Replay d
 
 ## Dashboard
 
+A frosted glass workspace with a floating icon rail, an original interior backdrop, and mint/charcoal cards. The overview shows execution totals, run counts, a duration/span chart, and root-span completeness using the six runs on the current page. All filters, chart bars, and mode controls operate on real collector data. [Design notes and asset provenance](docs/visual-design.md).
+
 - Trace list with name/ID search, exact service filter, status, mode, time windows, and cursor pagination.
 - Expandable waterfall, monotonic durations, keyboard span selection, ID copying, and error indicators that remain visible when parents are folded.
 - Inspector for overview, attributes, events, captured input/output, and error details. Captured `null` is distinct from “Not captured”.
 - Linked original/replay comparison by hierarchical name and occurrence. Timing comparisons explicitly account for substituted IO.
 - Last retrieved data remains visible during collector outages; two-second polling recovers when it returns.
 
-![Actual demo traces in the trace explorer](docs/screenshots/trace-list.png)
+![Actual demo traces in the trace explorer](docs/screenshots/trace-overview.jpg)
 
 ## Architecture
 

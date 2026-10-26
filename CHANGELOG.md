@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Restyled the dashboard to match the Glassy Dashboard V2 reference: original warm interior backdrop, floating navigation, translucent rounded panels, mint/charcoal cards, and reduced-motion-aware transitions.
+- Added real execution totals, a duration/span chart with trace navigation, root completeness, and synchronized mode shortcuts. The overview shows six runs per page.
+- Applied the same visual system to trace details, replay comparison, and setup. Verified desktop/mobile layouts and automated accessibility checks.
+
 ## 0.1.0 — Initial source release
 
 - Typed Node ESM SDK with nested async spans, concurrent sibling context, safe previews, redaction, bounded transport, diagnostics, and graceful drain.

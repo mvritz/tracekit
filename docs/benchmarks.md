@@ -12,6 +12,8 @@ For each batch size 1, 25, and 100, insert three independent traces of 1,000 spa
 
 ## Browser
 
+The checked-in browser measurements are the baseline from the initial flat dashboard, before the glass redesign. Re-run the command to measure the current design; these numbers do not describe its rendering cost.
+
 Create synthetic traces with 100, 1,000, and 10,000 spans. Open fresh documents at 1440×1000 in headless Chromium against Vite and the real collector. After a warmup, record three navigations from document start through fetch and full DOM row creation, followed by a rendered animation frame. Browser assets are warm; each document has a fresh React Query cache. Startup of the browser/server is excluded. The exact count of rendered rows is recorded.
 
 The dashboard is not virtualized; 10,000 spans are a hard protocol cap, not a recommendation for every trace. These timings do not measure user-perceived interaction responsiveness or prove an SLA. Add virtualization and a dedicated production-build benchmark before making large-scale performance claims. p95 with only three samples is effectively the maximum, not a statistically stable tail estimate.

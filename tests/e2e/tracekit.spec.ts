@@ -102,3 +102,27 @@ test('core screens have no automated WCAG A/AA violations', async ({ page }) => 
     expect(result.violations).toEqual([]);
   }
 });
+test('overview chart, mode controls and mobile header remain usable', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('combobox', { name: 'Chart metric' }).selectOption('spans');
+  await expect(page.getByRole('heading', { name: 'Spans per run', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Replays', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Mode filter' })).toHaveValue('replay');
+  await expect(page.locator('.trace-table tbody tr').first().locator('.mode')).toHaveText('Replay');
+  await page.getByRole('button', { name: 'All runs', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Mode filter' })).toHaveValue('');
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 1000 });
+    // Resizing retains the focused control's scroll anchor; inspect each layout from its top.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.getByRole('link', { name: 'TraceKit home', exact: true })).toBeVisible();
+    const header = await page.locator('.topbar').boundingBox();
+    expect(header?.y).toBeGreaterThanOrEqual(0);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  }
+  await page.locator('.chart-column').first().click();
+  await expect(page.getByRole('heading', { name: 'Execution waterfall' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
