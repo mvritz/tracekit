@@ -1,0 +1,13 @@
+{
+  "name": "@tracekit/research-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@tracekit/sdk": "workspace:*",
+    "@tracekit/protocol": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+Cargo.lock
+target
+dist
+.tracekit
+node_modules

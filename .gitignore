@@ -1,0 +1,12 @@
+node_modules/
+dist/
+target/
+.tracekit/
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/
+*.tgz
+.DS_Store

@@ -1,0 +1,34 @@
+{
+  "name": "@tracekit/sdk",
+  "version": "0.1.0",
+  "description": "TraceKit sdk for local-first agent tracing and controlled replay",
+  "type": "module",
+  "license": "MIT",
+  "author": "mvritz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mvritz/tracekit.git",
+    "directory": "packages/sdk"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@tracekit/protocol": "workspace:*"
+  }
+}

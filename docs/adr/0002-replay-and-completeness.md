@@ -1,0 +1,3 @@
+# ADR 0002: Sequential boundaries and separate fixture finalization
+
+Accepted. Replay substitutes JSON outcomes only at explicit `recordTool` calls. v0.1 captures sequential, nonoverlapping boundaries; stable-key concurrent replay is deferred. Hash canonical sanitized input and match name plus initiation sequence. Never invoke live handlers on replay or mismatch. Keep full replay records separate from lossy previews. Finalize after root completion and span delivery, with a transaction checking root/parents and the tool-name multiset. Freeze the run against new spans after finalization. Third-party producers can lie about completeness, so fixtures remain trusted local input, not signed execution proofs.

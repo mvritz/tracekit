@@ -1,0 +1,3 @@
+# ADR 0003: Versioned contracts and authoritative run identity
+
+Accepted. One root trace per UUID run. Batches carry explicit immutable run metadata, including mode/source linkage; span attributes are never authoritative. Permit child-first delivery and unknown parents, reject cycles/multiple roots, track earliest observed time, and replace placeholder root metadata once it arrives. TS Zod and Rust serde validators share golden JSON fixtures. Canonical span hashing supports idempotent retransmission and rejects conflicting updates atomically. Protocol-breaking changes need a new schema version and migration plan.

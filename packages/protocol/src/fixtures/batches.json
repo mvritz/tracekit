@@ -1,0 +1,743 @@
+[
+  {
+    "name": "valid-root",
+    "valid": true,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "zero-trace",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "00000000000000000000000000000000",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "uppercase-span",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "AAAAAAAAAAAAAAAA",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "self-parent",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": "2222222222222222",
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "long-name",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "negative-duration",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": -1,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "clock-reversed",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown-version",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 2,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "nested-attributes",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "v": {
+              "deep": true
+            }
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown-kind",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "http",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown-parent",
+    "valid": true,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": "3333333333333333",
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "captured-null",
+    "valid": true,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": {
+            "input": null,
+            "output": null
+          },
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty-batch",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": []
+    }
+  },
+  {
+    "name": "missing-replay-link",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "replay",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing-parent",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing-payload",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing-error",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "golden-agent",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "utf16-name-limit",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "unicode-control-name",
+    "valid": false,
+    "batch": {
+      "schema_version": 1,
+      "source": {
+        "sdk": "tracekit-node",
+        "version": "0.1.0"
+      },
+      "run": {
+        "run_id": "11111111-1111-4111-8111-111111111111",
+        "trace_id": "11111111111111111111111111111111",
+        "service_name": "contract",
+        "mode": "record",
+        "replay_of_run_id": null
+      },
+      "spans": [
+        {
+          "schema_version": 1,
+          "trace_id": "11111111111111111111111111111111",
+          "span_id": "2222222222222222",
+          "parent_span_id": null,
+          "run_id": "11111111-1111-4111-8111-111111111111",
+          "name": "badname",
+          "kind": "agent",
+          "status": "ok",
+          "start_time_unix_ms": 1780000000000,
+          "end_time_unix_ms": 1780000000002,
+          "duration_ns": 2000000,
+          "service_name": "contract",
+          "attributes": {
+            "version": 1
+          },
+          "events": [],
+          "payload": null,
+          "error": null
+        }
+      ]
+    }
+  }
+]
