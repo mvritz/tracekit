@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-10-26T20:25:40.589Z",
+  "browser": "156.0.8078.4",
+  "viewport": "1440x1000",
+  "methodology": "Vite development server; browser navigation through data fetch and full DOM render; fresh documents with warm browser asset cache, one warmup then three measured navigations per trace size; no virtualization; collector on same machine as SDK benchmark",
+  "results": {
+    "100": {
+      "median_ms": 132.26158299999997,
+      "p95_ms": 146.41841599999998,
+      "samples_ms": [146.41841599999998, 132.26158299999997, 81.14687499999991],
+      "rendered_rows": 100
+    },
+    "1000": {
+      "median_ms": 350.78954200000044,
+      "p95_ms": 452.6121670000002,
+      "samples_ms": [300.0023339999998, 452.6121670000002, 350.78954200000044],
+      "rendered_rows": 1000
+    },
+    "10000": {
+      "median_ms": 2199.5694170000024,
+      "p95_ms": 2541.0892080000012,
+      "samples_ms": [2118.5499999999993, 2199.5694170000024, 2541.0892080000012],
+      "rendered_rows": 10000
+    }
+  }
+}

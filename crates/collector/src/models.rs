@@ -80,6 +80,18 @@ pub struct Event {
     pub attributes: BTreeMap<String, Value>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CaptureState {
+    Value,
+    Undefined,
+}
+fn capture_state<'de, D>(d: D) -> Result<Option<CaptureState>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    CaptureState::deserialize(d).map(Some)
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Payload {
     #[serde(
@@ -96,6 +108,18 @@ pub struct Payload {
     pub output: Option<Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input_truncated: Option<bool>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "capture_state"
+    )]
+    pub input_state: Option<CaptureState>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "capture_state"
+    )]
+    pub output_state: Option<CaptureState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output_truncated: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

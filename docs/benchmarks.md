@@ -1,6 +1,6 @@
 # Reproducible measurements
 
-Run `pnpm build`, start the default collector, then `pnpm bench`. The script writes [raw SDK and collector samples](benchmark-results.json), machine/tool versions, and methodology. Start the dashboard and install Chromium, then run `pnpm bench:dashboard` for [browser measurements](dashboard-benchmark-results.json). All generated spans are labeled `synthetic-benchmark`. No secrets or external model calls are involved.
+Run `bun run build`, start the default collector, then `bun run bench`. The script writes [raw SDK and collector samples](benchmark-results.json), machine/tool versions, and methodology. Start the dashboard and install Chromium, then run `bun run bench:dashboard` for [browser measurements](dashboard-benchmark-results.json). All generated spans are labeled `synthetic-benchmark`. No secrets or external model calls are involved.
 
 ## SDK
 
@@ -12,10 +12,16 @@ For each batch size 1, 25, and 100, insert three independent traces of 1,000 spa
 
 ## Browser
 
-The checked-in browser measurements are the baseline from the initial flat dashboard, before the glass redesign. Re-run the command to measure the current design; these numbers do not describe its rendering cost.
+The [before samples](dashboard-before-results.json) measure the photographic glass dashboard at commit `ca806aa`. The [current samples](dashboard-benchmark-results.json) measure the dark, windowed dashboard and optimized collector read path on the same Apple M3 Pro, in Chromium 156 at 1440×1000. The collector uses its debug build in both runs.
 
-Create synthetic traces with 100, 1,000, and 10,000 spans. Open fresh documents at 1440×1000 in headless Chromium against Vite and the real collector. After a warmup, record three navigations from document start through fetch and full DOM row creation, followed by a rendered animation frame. Browser assets are warm; each document has a fresh React Query cache. Startup of the browser/server is excluded. The exact count of rendered rows is recorded.
+| Spans  | Before median | Current median | Speedup | Mounted rows before → after |
+| ------ | ------------- | -------------- | ------- | --------------------------- |
+| 100    | 132 ms        | 67 ms          | 2.0×    | 100 → 14                    |
+| 1,000  | 351 ms        | 89 ms          | 3.9×    | 1,000 → 14                  |
+| 10,000 | 2200 ms       | 328 ms         | 6.7×    | 10,000 → 14                 |
 
-The dashboard is not virtualized; 10,000 spans are a hard protocol cap, not a recommendation for every trace. These timings do not measure user-perceived interaction responsiveness or prove an SLA. Add virtualization and a dedicated production-build benchmark before making large-scale performance claims. p95 with only three samples is effectively the maximum, not a statistically stable tail estimate.
+Create synthetic traces with 100, 1,000, and 10,000 spans. Open fresh documents against Vite and the real collector. After a warmup, record three navigations through the full trace fetch, tree construction, row mounting, and a rendered animation frame. Browser assets are warm; each document has a fresh React Query cache. Browser/server startup is excluded. Before, readiness meant all rows were mounted. Now, readiness means the full trace is available to the waterfall and its visible rows are mounted. This is the intended difference; the data itself is still fully fetched and validated. Raw sample times and row counts are retained.
 
-Results are published to make the measurements inspectable and repeatable. They are not marketing promises, service-level commitments, or comparisons against other products. Performance benchmarks are manual and are not CI gates.
+Windowing keeps DOM size bounded. Tree construction uses append operations and iterative error propagation instead of repeated array copies and subtree scans. The collector validates stored canonical JSON with borrowed `RawValue` references and writes it directly into the JSON response, avoiding object-tree allocation and reserialization. Completed traces retain their span data and use small summary polls to detect late arrivals. Filters debounce text input. The background photo (111 KiB), backdrop blur, and entrance effects have been removed.
+
+These are local development-server measurements on one machine, with three measured samples per case. They are not production-build measurements, interaction-latency tests, or an SLA. The recorded p95 is effectively the largest of three samples, not a stable tail estimate. Payload-heavy traces and other hardware will differ. The 10,000-span protocol cap remains unchanged. Benchmarks are manual and are not CI gates.

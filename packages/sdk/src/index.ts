@@ -153,7 +153,11 @@ export function createTraceKit(options: TraceKitOptions) {
     try {
       if (hasInput && (spanOptions.captureInput ?? options.capture?.inputs)) {
         const p = sanitize.preview(input);
-        payload = { input: p.value, input_truncated: p.truncated };
+        payload = {
+          input: p.value,
+          input_truncated: p.truncated,
+          input_state: input === undefined ? 'undefined' : 'value',
+        };
       }
     } catch {
       transport.stats.dropped++;
@@ -174,7 +178,12 @@ export function createTraceKit(options: TraceKitOptions) {
       try {
         if (!failed && (spanOptions.captureOutput ?? options.capture?.outputs)) {
           const p = sanitize.preview(result);
-          payload = { ...payload, output: p.value, output_truncated: p.truncated };
+          payload = {
+            ...payload,
+            output: p.value,
+            output_truncated: p.truncated,
+            output_state: result === undefined ? 'undefined' : 'value',
+          };
         }
         const rawAttrs = sanitize.serialize(spanOptions.attributes ?? {});
         const attrs =

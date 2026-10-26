@@ -37,6 +37,12 @@ curl -H 'Content-Type: application/json' \
 
 Success: `{ "accepted": 1, "deduplicated": 0, "rejected": 0 }`. Exact repeats are deduplicated. Canonicalization sorts object keys recursively; arrays retain order. Rust canonicalizes the validated JSON, hashes it with SHA-256, and compares the immutable stored hash. The full batch rolls back on validation or identity conflict. The same span ID in another trace is allowed.
 
+## Captured values
+
+Optional `payload.input_state` and `payload.output_state` are `"value"` or `"undefined"`. New SDK captures set them so a callback with no return value is distinct from captured `null`, a literal `"[undefined]"` string, and capture being disabled. The JSON-safe preview is preserved alongside this metadata. Missing state fields remain valid for older captures. Their `"[undefined]"` marker is ambiguous; the inspector explains this and exposes the original preview. These fields describe display captures only; replay still requires lossless JSON values.
+
+Rebuild and restart the collector alongside the SDK when upgrading: older v1 collectors reject unknown fields.
+
 ## Endpoints
 
 | Method | Path                               | Result                                                           |

@@ -120,6 +120,7 @@ console.log(
     spans: spans.items.length,
     replayLiveCalls: live,
     privacyCheck: 'passed',
+    privacyTrace: privacyFixture.source_trace_id,
     failedTrace: failed.getReplayFixture().source_trace_id,
   }),
 );

@@ -192,7 +192,7 @@ async fn import(
         storage::finalize(&s.pool, &id, body.map_err(body_error)?.0).await?,
     ))
 }
-async fn spans(State(s): State<AppState>, Path(id): Path<String>) -> Result<Json<Value>, ApiError> {
+async fn spans(State(s): State<AppState>, Path(id): Path<String>) -> Result<Response, ApiError> {
     if !models::id(&id, 32) {
         return Err(ApiError::invalid());
     }
@@ -200,12 +200,23 @@ async fn spans(State(s): State<AppState>, Path(id): Path<String>) -> Result<Json
     if rows.is_empty() {
         return Err(ApiError::missing());
     }
-    let items: Vec<Value> = rows
+    // Validate the stored JSON without building and reserializing thousands of object trees.
+    // RawValue's serializer copies the validated JSON into the response unchanged.
+    #[derive(serde::Serialize)]
+    struct SpanPage<'a> {
+        items: Vec<&'a serde_json::value::RawValue>,
+        truncated: bool,
+    }
+    let items = rows
         .iter()
-        .map(|v| serde_json::from_str(v))
+        .map(|v| serde_json::from_str::<&serde_json::value::RawValue>(v))
         .collect::<Result<_, _>>()
         .map_err(|_| ApiError::invalid())?;
-    Ok(Json(json!({"items":items,"truncated":false})))
+    Ok(Json(SpanPage {
+        items,
+        truncated: false,
+    })
+    .into_response())
 }
 const SUMMARY:&str="SELECT r.*, COALESCE((SELECT name FROM spans WHERE trace_id=r.trace_id AND parent_span_id IS NULL), (SELECT name FROM spans WHERE trace_id=r.trace_id ORDER BY start_time_ms,span_id LIMIT 1)) AS name, (SELECT COUNT(*) FROM spans WHERE trace_id=r.trace_id) AS span_count, (SELECT COUNT(*) FROM spans WHERE trace_id=r.trace_id AND status='error') AS error_count, (SELECT COUNT(*) FROM spans WHERE trace_id=r.trace_id AND status='cancelled') AS cancelled_count, (SELECT COUNT(*) FROM spans WHERE trace_id=r.trace_id AND parent_span_id IS NULL) AS root_count, (SELECT MAX(end_time_ms) FROM spans WHERE trace_id=r.trace_id) AS end_time_ms, COALESCE((SELECT duration_ns FROM spans WHERE trace_id=r.trace_id AND parent_span_id IS NULL), ((SELECT MAX(end_time_ms) FROM spans WHERE trace_id=r.trace_id)-r.started_at_ms)*1000000) AS duration_ns FROM runs r";
 fn summary(row: &sqlx::sqlite::SqliteRow) -> Value {

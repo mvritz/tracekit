@@ -13,21 +13,21 @@ Trace nested async workflows, inspect their execution in a browser, and replay r
 
 ## Quickstart
 
-Prerequisites: **Node 22.12+** (tested with 24.0.1), **pnpm 9.15.4**, and **Rust 1.92.0**. The Rust toolchain is pinned in `rust-toolchain.toml`. Install pnpm with `npm install -g pnpm@9.15.4` if needed.
+Prerequisites: **Node 22.12+** (tested with 24.0.1), **Bun 1.3.13**, and **Rust 1.92.0**. The Rust toolchain is pinned in `rust-toolchain.toml`. Install the pinned Bun version from [bun.sh](https://bun.sh). Bun is required for workspace installation and commands; the install guard rejects other package managers and versions. The SDK remains compatible with Node.
 
 ```bash
 git clone https://github.com/mvritz/tracekit.git
 cd tracekit
-pnpm install --frozen-lockfile
-pnpm dev
+bun install --frozen-lockfile
+bun run dev
 ```
 
 Leave that terminal running. In another terminal, from the repository root:
 
 ```bash
-pnpm demo:record
-pnpm demo:failure
-pnpm demo:replay
+bun run demo:record
+bun run demo:failure
+bun run demo:replay
 ```
 
 Open **http://127.0.0.1:3000**. The collector listens at **http://127.0.0.1:4319** and creates `.tracekit/tracekit.db`. The demo retrieves three fixed documents, uses a local model stub, and validates citations. The failure run deliberately omits citations; the waterfall identifies `validate-citations` as the failing step. The replay command disables the live tools and reports `liveCalls: 0`.
@@ -35,14 +35,14 @@ Open **http://127.0.0.1:3000**. The collector listens at **http://127.0.0.1:4319
 Replay the recorded failure with the same workflow:
 
 ```bash
-pnpm demo:replay .tracekit/failure-fixture.json
+bun run demo:replay .tracekit/failure-fixture.json
 ```
 
 Use `127.0.0.1` for the dashboard URL: the default origin allowlist intentionally does not also allow `localhost`. The first Rust compilation downloads and builds dependencies; subsequent starts are faster. Ctrl-C shuts down both development processes.
 
 ## Instrument a workflow
 
-The SDK is a Node ESM package. Inside the workspace, import `@tracekit/sdk` after `pnpm build`. See [packaging](CONTRIBUTING.md#package-checks) for use in another local project.
+The SDK is a Node ESM package. Inside the workspace, import `@tracekit/sdk` after `bun run build`. See [packaging](CONTRIBUTING.md#package-checks) for use in another local project.
 
 ```ts
 import { createTraceKit } from '@tracekit/sdk';
@@ -97,13 +97,13 @@ Only finalized, complete, explicitly opted-in fixtures can be exported. Replay d
 
 ## Dashboard
 
-A frosted glass workspace with a floating icon rail, an original interior backdrop, and mint/charcoal cards. The overview shows execution totals, run counts, a duration/span chart, and root-span completeness using the six runs on the current page. All filters, chart bars, and mode controls operate on real collector data. [Design notes and asset provenance](docs/visual-design.md).
+A dark workspace with a subtle charcoal-to-forest gradient, opaque mint/charcoal cards, and distinct trace, replay, and terminal navigation icons. The overview shows execution totals, run counts, a duration/span chart, and root-span completeness using the six runs on the current page. All filters, chart bars, and mode controls operate on real collector data. [Design notes](docs/visual-design.md).
 
 - Trace list with name/ID search, exact service filter, status, mode, time windows, and cursor pagination.
-- Expandable waterfall, monotonic durations, keyboard span selection, ID copying, and error indicators that remain visible when parents are folded.
-- Inspector for overview, attributes, events, captured input/output, and error details. Captured `null` is distinct from “Not captured”.
+- Windowed waterfall for up to 10,000 spans, monotonic durations, keyboard span selection across unmounted rows, ID copying, and error indicators that remain visible when parents are folded.
+- Inspector for overview, attributes, events, captured input/output, and error details. No return value, captured `null`, literal marker strings, and “Not captured” are distinct. Older ambiguous captures retain their raw preview and an explanation.
 - Linked original/replay comparison by hierarchical name and occurrence. Timing comparisons explicitly account for substituted IO.
-- Last retrieved data remains visible during collector outages; two-second polling recovers when it returns.
+- Last retrieved data remains visible during collector outages. Two-second lightweight health/summary polling recovers automatically; completed traces only download spans again when their count changes.
 
 ![Actual demo traces in the trace explorer](docs/screenshots/trace-overview.jpg)
 
@@ -153,26 +153,26 @@ SDK capture and batching are configured through the typed API, **not environment
 ## Verify and measure
 
 ```bash
-pnpm check                 # build, format, lint, types, unit/component/contract tests
+bun run check                 # build, format, lint, types, unit/component/contract tests
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
-pnpm exec playwright install chromium
-pnpm test:e2e             # starts local services if needed
-pnpm smoke                # requires collector; records, exports, replays, verifies
-pnpm bench                # requires collector; writes raw benchmark results
-pnpm bench:dashboard      # requires collector + dashboard + Chromium
+bunx --no-install playwright install chromium
+bun run test:e2e             # starts local services if needed
+bun run smoke                # requires collector; records, exports, replays, verifies
+bun run bench                # requires collector; writes raw benchmark results
+bun run bench:dashboard      # requires collector + dashboard + Chromium
 ```
 
 Tests cover async context, unchanged callback behavior, pre-network redaction, zero live replay calls, mismatches, queue outages, atomic idempotency, concurrent writes, cross-language contracts, XSS text rendering, keyboard navigation, and desktop/mobile layout. CI runs the native stack on Linux, with JavaScript checks on Linux and macOS.
 
-Benchmark results and methodology live in [docs/benchmarks.md](docs/benchmarks.md). They are measurements on one machine, not production guarantees. Database retention is manual: stop the collector, back up `.tracekit/`, then run `pnpm clean:data --yes` to delete this checkout's trace data and demo fixtures. Never commit `.tracekit/`.
+Benchmark results and methodology live in [docs/benchmarks.md](docs/benchmarks.md). They are measurements on one machine, not production guarantees. Database retention is manual: stop the collector, back up `.tracekit/`, then run `bun run clean:data --yes` to delete this checkout's trace data and demo fixtures. Never commit `.tracekit/`.
 
 ## Status and roadmap
 
 Implemented: the tracing SDK, HTTP transport, atomic local ingestion, migrations, trace search and waterfall, explicit redaction, sequential strict replay, fixture import/export, linked comparison, offline examples, tests, and repeatable benchmarks.
 
-Remaining work includes virtualized large-trace rendering, retention policies, additional platforms and browsers, streaming updates, stable-key concurrent replay, and an optional OpenTelemetry bridge. IDs follow W3C widths; full OpenTelemetry interoperability and automatic distributed propagation are not implemented. This is a developer tool, not a hosted/multi-user service or full arbitrary-program recorder.
+Remaining work includes retention policies, additional platforms and browsers, streaming updates, stable-key concurrent replay, and an optional OpenTelemetry bridge. IDs follow W3C widths; full OpenTelemetry interoperability and automatic distributed propagation are not implemented. This is a developer tool, not a hosted/multi-user service or full arbitrary-program recorder.
 
 [Contributing](CONTRIBUTING.md) · [Security reporting](SECURITY.md) · [Architecture decisions](docs/adr) · [Troubleshooting](docs/troubleshooting.md) · [Initial release notes](CHANGELOG.md)
 

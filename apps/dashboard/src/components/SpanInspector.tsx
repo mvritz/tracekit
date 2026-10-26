@@ -36,6 +36,8 @@ export function SpanInspector({ span }: { span: SpanEnvelope | undefined }) {
       </aside>
     );
   const payloadKey = tab === 'Input' ? 'input' : 'output';
+  const captureState = span.payload?.[`${payloadKey}_state`];
+  const legacyUndefined = !captureState && span.payload?.[payloadKey] === '[undefined]';
   const hasPayload = span.payload !== null && Object.hasOwn(span.payload, payloadKey);
   return (
     <aside className="inspector" aria-label="Span inspector">
@@ -115,6 +117,29 @@ export function SpanInspector({ span }: { span: SpanEnvelope | undefined }) {
           ) : (
             <NotCaptured text="No error recorded" />
           )
+        ) : captureState === 'undefined' || legacyUndefined ? (
+          <>
+            <NotCaptured
+              text={
+                legacyUndefined
+                  ? 'No return value'
+                  : payloadKey === 'output'
+                    ? 'No return value'
+                    : 'Undefined input'
+              }
+              detail={
+                legacyUndefined
+                  ? 'This older capture used an undefined marker, usually because the callback returned no value. It cannot distinguish that from the literal string "[undefined]".'
+                  : payloadKey === 'output'
+                    ? 'The callback completed without returning a value. This is different from a captured null or disabled capture.'
+                    : 'Capture was enabled, but the supplied input was undefined.'
+              }
+            />
+            <details className="payload-raw">
+              <summary>Raw captured preview</summary>
+              <Json value={span.payload?.[payloadKey]} />
+            </details>
+          </>
         ) : hasPayload ? (
           <>
             {span.payload?.[`${payloadKey}_truncated`] && (

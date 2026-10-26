@@ -108,6 +108,20 @@ describe('context and lifecycle', () => {
     expect(encoded).not.toContain('person@example.com');
     expect(value.Token).toBe('secret-value');
   });
+  it('preserves undefined returns while tagging captures distinctly from literal strings and null', async () => {
+    const tk = client({ capture: { inputs: true, outputs: true } });
+    expect(await tk.trace('void', () => undefined)).toBeUndefined();
+    expect(await tk.trace('literal', () => '[undefined]')).toBe('[undefined]');
+    expect(await tk.trace('null', () => null)).toBeNull();
+    await tk.trace('input', () => tk.recordTool('undefined-input', () => 1, undefined));
+    await tk.flush();
+    const payload = (name: string) => spans().find((s) => s.name === name)?.payload;
+    expect(payload('void')?.output_state).toBe('undefined');
+    expect(payload('literal')?.output_state).toBe('value');
+    expect(payload('null')).toMatchObject({ output: null, output_state: 'value' });
+    expect(payload('undefined-input')?.input_state).toBe('undefined');
+    expect(tk.getDiagnostics().dropped).toBe(0);
+  });
   it('never lets a broken custom sanitizer replace application behavior', async () => {
     const tk = client({
       capture: { outputs: true },

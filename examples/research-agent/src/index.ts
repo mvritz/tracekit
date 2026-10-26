@@ -40,7 +40,7 @@ try {
   console.log(JSON.stringify({ diagnostics: tk.getDiagnostics() }));
   if (tk.getDiagnostics().dropped > 0)
     console.error(
-      'Collector unavailable or telemetry rejected. Start pnpm dev, then run the demo again.',
+      'Collector unavailable or telemetry rejected. Start bun run dev, then run the demo again.',
     );
 }
 

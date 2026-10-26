@@ -14,6 +14,8 @@ The default path is `.tracekit/tracekit.db` relative to the collector's current 
 
 Unix DB files are chmod 0600; the demo creates directories with 0700 and fixtures with 0600. Existing directory permissions and Windows ACLs are your responsibility. Files and backups are not encrypted by TraceKit. Keep them on a trusted disk. Exported browser downloads follow the browser's directory permissions; review before sharing.
 
-There is no automatic retention. Stop the collector, back up anything needed, and run `pnpm clean:data --yes` from the repository root to permanently remove that checkout's `.tracekit/` directory. The command refuses while the default collector is reachable. For custom DB paths, stop the corresponding collector and delete only your intended DB/sidecars manually. Migration failures preserve existing data and fail startup.
+There is no automatic retention. Stop the collector, back up anything needed, and run `bun run clean:data --yes` from the repository root to permanently remove that checkout's `.tracekit/` directory. The command refuses while the default collector is reachable. For custom DB paths, stop the corresponding collector and delete only your intended DB/sidecars manually. Migration failures preserve existing data and fail startup.
 
 `.tracekit/`, `.env*` (except `.env.example`), and tarballs are Git-ignored. Checked-in contract data and screenshots are synthetic. Never commit customer fixtures, traces, or credentials.
+
+The inspector distinguishes disabled capture, captured `null`, and a callback with no return value. New display captures include explicit input/output state metadata; old `"[undefined]"` previews are labeled with a compatibility explanation and their raw value remains accessible. This does not change application return values or relax replay's lossless JSON requirement.

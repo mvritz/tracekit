@@ -12,7 +12,7 @@ export default defineConfig({
       timeout: 180000,
     },
     {
-      command: 'pnpm --filter @tracekit/dashboard dev',
+      command: 'bun run --filter @tracekit/dashboard dev',
       url: 'http://127.0.0.1:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 60000,

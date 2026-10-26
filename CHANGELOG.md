@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Replace the photographic glass backdrop with an opaque dark workspace and subtle gradient; use distinct trace/replay/setup navigation icons.
+- Avoid JSON object-tree rebuilding on collector span reads while retaining validation; window large waterfalls, build trees without repeated subtree scans, debounce text filters, and stop downloading unchanged completed traces while detecting late spans.
+- Require Bun 1.3.13 with a migrated lockfile, install guard, workspace scripts, documentation, and Linux/macOS CI.
+- Explain undefined returns in the inspector and distinguish them from literal marker strings in new captures. Collector and SDK must be rebuilt/restarted together for the added optional capture-state fields.
+
+## Unreleased
+
 - Restyled the dashboard to match the Glassy Dashboard V2 reference: original warm interior backdrop, floating navigation, translucent rounded panels, mint/charcoal cards, and reduced-motion-aware transitions.
 - Added real execution totals, a duration/span chart with trace navigation, root completeness, and synchronized mode shortcuts. The overview shows six runs per page.
 - Applied the same visual system to trace details, replay comparison, and setup. Verified desktop/mobile layouts and automated accessibility checks.

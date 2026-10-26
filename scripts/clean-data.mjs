@@ -2,7 +2,7 @@ import { rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 if (!process.argv.includes('--yes')) {
   console.error(
-    'Stop TraceKit, then run pnpm clean:data --yes to permanently delete this checkout’s .tracekit directory.',
+    'Stop TraceKit, then run bun run clean:data --yes to permanently delete this checkout’s .tracekit directory.',
   );
   process.exit(1);
 }

@@ -72,6 +72,8 @@ export const spanSchema = z
       .object({
         input: jsonSchema.optional(),
         output: jsonSchema.optional(),
+        input_state: z.enum(['value', 'undefined']).optional(),
+        output_state: z.enum(['value', 'undefined']).optional(),
         input_truncated: z.boolean().optional(),
         output_truncated: z.boolean().optional(),
         redacted_paths: z.array(limitedString(512)).max(128).optional(),

@@ -1,19 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   Activity,
   ArrowDown,
   ArrowLeft,
   ArrowRight,
-  BookOpen,
   CheckCircle2,
-  Columns2,
   Download,
   GitBranch,
   Layers3,
   Command,
   CodeXml,
-  Home,
   CalendarDays,
   RefreshCw,
   Search,
@@ -40,6 +37,12 @@ function readHash() {
   return new URLSearchParams(window.location.hash.slice(1)).get('trace');
 }
 export function App() {
+  const health = useQuery({
+    queryKey: ['health'],
+    queryFn: () => api('/healthz'),
+    refetchInterval: 2000,
+    retry: 1,
+  });
   const metadata = useQuery({
     queryKey: ['meta'],
     queryFn: () => api<{ database_logical_bytes: number }>('/v1/meta'),
@@ -57,17 +60,24 @@ export function App() {
     [service, setService] = useState(''),
     [windowMs, setWindowMs] = useState('');
   const [cursors, setCursors] = useState<(string | undefined)[]>([undefined]);
+  const [debounced, setDebounced] = useState({ search: '', service: '' });
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebounced({ search, service }), 200);
+    return () => clearTimeout(timeout);
+  }, [search, service]);
   const cursor = cursors.at(-1);
   const params = new URLSearchParams({ limit: '6' });
-  if (search) params.set('q', search);
+  if (debounced.search) params.set('q', debounced.search);
   if (status) params.set('status', status);
   if (mode) params.set('mode', mode);
-  if (service) params.set('service_name', service);
+  if (debounced.service) params.set('service_name', debounced.service);
   if (windowMs)
     params.set('from', String(Math.floor(Date.now() / 60000) * 60000 - Number(windowMs)));
   if (cursor) params.set('cursor', cursor);
+  const listActive = view !== 'setup' && (view === 'compare' || !trace);
   const query = useQuery({
     queryKey: ['traces', params.toString()],
+    enabled: listActive,
     queryFn: () => getTraces(params),
     refetchInterval: 2000,
     placeholderData: keepPreviousData,
@@ -87,6 +97,7 @@ export function App() {
     setter(value);
     setCursors([undefined]);
   }
+  const unavailable = health.isError || (listActive && query.isError);
   const items = query.data?.items ?? [];
   return (
     <div className="app">
@@ -110,11 +121,11 @@ export function App() {
           Local workspace
         </span>
         <div className="topbar-actions">
-          <span className={`local-badge ${query.isError ? 'offline' : ''}`}>
-            <span className={`connection-dot ${query.isError ? 'offline' : ''}`} />
-            {query.isPending
+          <span className={`local-badge ${unavailable ? 'offline' : ''}`}>
+            <span className={`connection-dot ${unavailable ? 'offline' : ''}`} />
+            {health.isPending
               ? 'Connecting'
-              : query.isError
+              : unavailable
                 ? 'Collector offline'
                 : 'Collector connected'}
           </span>
@@ -130,7 +141,7 @@ export function App() {
       </header>
       <Navigation
         view={view}
-        connected={!query.isError}
+        connected={!unavailable}
         onNavigate={(next) => {
           if (next === 'traces') openTrace(null);
           else setView(next);
@@ -143,11 +154,19 @@ export function App() {
             clear local data.
           </div>
         )}
-        {query.isError && (
+        {unavailable && (
           <div className="connection-banner" role="alert">
             <AlertCircle size={16} />
             Collector unavailable. Showing the last retrieved data. Start it with{' '}
-            <code>pnpm dev</code>.<button onClick={() => void query.refetch()}>Retry</button>
+            <code>bun run dev</code>.
+            <button
+              onClick={() => {
+                void health.refetch();
+                if (listActive) void query.refetch();
+              }}
+            >
+              Retry
+            </button>
           </div>
         )}
         {view === 'setup' ? (
@@ -197,8 +216,8 @@ export function App() {
                 <div className="section-heading">
                   <h2>Recent traces</h2>
                   <span>
-                    <span className={`connection-dot ${query.isError ? 'offline' : ''}`} />
-                    {query.isError ? 'Offline' : 'Updates every 2 seconds'}
+                    <span className={`connection-dot ${unavailable ? 'offline' : ''}`} />
+                    {unavailable ? 'Offline' : 'Updates every 2 seconds'}
                   </span>
                 </div>
                 <div className="filters">
@@ -323,7 +342,7 @@ export function App() {
                         ? 'Adjust the filters to find a run.'
                         : 'Run the offline research agent to inspect a real execution.'}
                     </p>
-                    <code>pnpm demo:record</code>
+                    <code>bun run demo:record</code>
                     <button className="text-button" onClick={() => setView('setup')}>
                       View setup instructions
                       <ArrowRight size={14} />
@@ -376,9 +395,6 @@ function Navigation({
 }) {
   return (
     <aside className="sidebar" aria-label="Workspace navigation">
-      <div className="rail-brand" title="TraceKit">
-        <Activity size={20} />
-      </div>
       <nav>
         <button
           className={`nav-item ${view === 'traces' ? 'active' : ''}`}
@@ -387,7 +403,7 @@ function Navigation({
           title="Traces"
           onClick={() => onNavigate('traces')}
         >
-          <Home size={18} />
+          <Activity size={19} />
           <span className="nav-label">Traces</span>
         </button>
         <button
@@ -397,7 +413,7 @@ function Navigation({
           title="Replay comparison"
           onClick={() => onNavigate('compare')}
         >
-          <Columns2 size={18} />
+          <GitBranch size={19} />
           <span className="nav-label">Replay comparison</span>
         </button>
         <button
@@ -407,7 +423,7 @@ function Navigation({
           title="Local setup"
           onClick={() => onNavigate('setup')}
         >
-          <BookOpen size={18} />
+          <Terminal size={19} />
           <span className="nav-label">Local setup</span>
         </button>
       </nav>
@@ -455,9 +471,14 @@ function TraceDetail({ id, onBack }: { id: string; onBack: () => void }) {
     retry: 1,
   });
   const spans = useQuery({
-    queryKey: ['spans', id],
+    queryKey: ['spans', id, summary.data?.span_count],
+    // Discard obsolete count versions rather than retaining every intermediate full trace.
+    gcTime: 0,
+    enabled: !!summary.data,
+    placeholderData: keepPreviousData,
     queryFn: () => getSpans(id),
-    refetchInterval: 2000,
+    refetchInterval: (query) =>
+      summary.data?.complete && query.state.status === 'success' ? false : 2000,
     retry: 1,
   });
   const [selected, setSelected] = useState<string | null>(null);
@@ -544,6 +565,7 @@ function TraceDetail({ id, onBack }: { id: string; onBack: () => void }) {
             <section aria-label="Execution waterfall">
               {spans.data ? (
                 <SpanWaterfall
+                  key={id}
                   spans={spans.data}
                   selected={current?.span_id ?? null}
                   onSelect={setSelected}
@@ -575,7 +597,10 @@ function Comparison({ items }: { items: TraceSummary[] }) {
   const rid = replays.some((x) => x.trace_id === replay) ? replay : replays[0]?.trace_id || '';
   const a = useQuery({ queryKey: ['spans', oid], queryFn: () => getSpans(oid), enabled: !!oid });
   const b = useQuery({ queryKey: ['spans', rid], queryFn: () => getSpans(rid), enabled: !!rid });
-  const rows = a.data && b.data ? matchedSpans(a.data, b.data) : [];
+  const rows = useMemo(
+    () => (a.data && b.data ? matchedSpans(a.data, b.data) : []),
+    [a.data, b.data],
+  );
   return (
     <div className="page">
       <div className="page-heading">
@@ -678,7 +703,7 @@ function Comparison({ items }: { items: TraceSummary[] }) {
               : 'Select a recorded run and its replay'}
           </h2>
           <p>Create the pair with the offline demo.</p>
-          <pre>pnpm demo:record{'\n'}pnpm demo:replay</pre>
+          <pre>bun run demo:record{'\n'}bun run demo:replay</pre>
         </div>
       )}
       <div className="command-panel">
@@ -686,7 +711,7 @@ function Comparison({ items }: { items: TraceSummary[] }) {
         <div>
           <strong>Replay in your local Node process</strong>
           <p>The collector never executes your application code.</p>
-          <code>pnpm demo:replay</code>
+          <code>bun run demo:replay</code>
         </div>
       </div>
     </div>
@@ -699,11 +724,11 @@ function Setup() {
       <h1>
         Start collecting<span className="heading-dot">.</span>
       </h1>
-      <p>Node 22.12+, pnpm 9.15.4, and Rust 1.92 are required. No API keys or hosted account.</p>
+      <p>Node 22.12+, Bun 1.3.13, and Rust 1.92 are required. No API keys or hosted account.</p>
       {[
-        ['01', 'Start the collector and dashboard', 'pnpm install --frozen-lockfile\npnpm dev'],
-        ['02', 'Record a real, offline agent run', 'pnpm demo:record\npnpm demo:failure'],
-        ['03', 'Replay with live tools disabled', 'pnpm demo:replay'],
+        ['01', 'Start the collector and dashboard', 'bun install --frozen-lockfile\nbun run dev'],
+        ['02', 'Record a real, offline agent run', 'bun run demo:record\nbun run demo:failure'],
+        ['03', 'Replay with live tools disabled', 'bun run demo:replay'],
       ].map(([number, title, command]) => (
         <div className="setup-step" key={number}>
           <span>{number}</span>

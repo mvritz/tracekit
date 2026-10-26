@@ -1,26 +1,33 @@
 {
-  "recorded_at": "2026-10-26T16:48:42.390Z",
+  "recorded_at": "2026-10-26T20:38:43.122Z",
   "browser": "156.0.8078.4",
   "viewport": "1440x1000",
-  "methodology": "Vite development server; browser navigation through data fetch and full DOM render; fresh documents with warm browser asset cache, one warmup then three measured navigations per trace size; no virtualization; collector on same machine as SDK benchmark",
+  "machine": {
+    "cpu": "Apple M3 Pro",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "baseline_revision": "ca806aa3f99dacae781ed80349adf3f9bdacf469",
+  "baseline_file": "dashboard-before-results.json",
+  "methodology": "Vite development server; browser navigation through full trace data fetch, tree construction, visible-row DOM render; fresh documents with warm browser asset cache, one warmup then three measured navigations per trace size; 50px windowed rows, 500px viewport and 4-row overscan; collector on same machine; baseline file uses identical data and navigation method but renders every row",
   "results": {
     "100": {
-      "median_ms": 74.61824999999999,
-      "p95_ms": 78.76016700000002,
-      "samples_ms": [78.76016700000002, 54.12287499999991, 74.61824999999999],
-      "rendered_rows": 100
+      "median_ms": 66.65770799999996,
+      "p95_ms": 95.10954199999992,
+      "samples_ms": [95.10954199999992, 56.68899999999985, 66.65770799999996],
+      "rendered_rows": 14
     },
     "1000": {
-      "median_ms": 190.32458300000008,
-      "p95_ms": 196.95100000000002,
-      "samples_ms": [186.51741700000002, 190.32458300000008, 196.95100000000002],
-      "rendered_rows": 1000
+      "median_ms": 88.830375,
+      "p95_ms": 108.2049579999998,
+      "samples_ms": [75.86395900000025, 88.830375, 108.2049579999998],
+      "rendered_rows": 14
     },
     "10000": {
-      "median_ms": 1695.4465409999993,
-      "p95_ms": 1746.4274590000005,
-      "samples_ms": [1621.7132080000001, 1695.4465409999993, 1746.4274590000005],
-      "rendered_rows": 10000
+      "median_ms": 328.3714160000018,
+      "p95_ms": 641.2029169999987,
+      "samples_ms": [641.2029169999987, 262.1526670000003, 328.3714160000018],
+      "rendered_rows": 14
     }
   }
 }

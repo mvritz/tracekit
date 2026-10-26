@@ -333,3 +333,40 @@ async fn finalized_fixture_export_and_immutability() {
         StatusCode::BAD_REQUEST
     );
 }
+
+#[tokio::test]
+async fn span_read_preserves_json_values_and_rejects_corruption() {
+    let a = app().await;
+    let mut b = batch();
+    b["spans"][0]["payload"] = json!({"input": null, "output": {"text": "</script>\"\n🌲", "literal": "[undefined]"}, "output_state": "value"});
+    assert_eq!(
+        request(&a.router, "POST", "/v1/ingest/spans", Some(b.clone()))
+            .await
+            .0,
+        StatusCode::OK
+    );
+    let path = "/v1/traces/11111111111111111111111111111111/spans";
+    let res = a
+        .router
+        .clone()
+        .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    assert_eq!(res.headers()["content-type"], "application/json");
+    assert_eq!(res.headers()["cache-control"], "no-store");
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    let page: Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(page["items"][0], b["spans"][0]);
+    assert_eq!(page["truncated"], false);
+    let pool = storage::connect(&a._dir.path().join("test.db"))
+        .await
+        .unwrap();
+    sqlx::query("UPDATE spans SET canonical_json='invalid-private-marker'")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let (status, error) = request(&a.router, "GET", path, None).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert!(!error.to_string().contains("invalid-private-marker"));
+}

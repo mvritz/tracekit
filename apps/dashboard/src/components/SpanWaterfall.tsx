@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { SpanEnvelope } from '@tracekit/protocol';
 import { duration, treeRows } from '../lib/api';
-export function SpanWaterfall({
+export const SpanWaterfall = memo(function SpanWaterfall({
   spans,
   selected,
   onSelect,
@@ -14,11 +14,55 @@ export function SpanWaterfall({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const rows = useMemo(() => treeRows(spans, collapsed), [spans, collapsed]);
-  const start = Math.min(...spans.map((s) => s.start_time_unix_ms));
-  const total = Math.max(
-    0.001,
-    ...spans.map((s) => s.start_time_unix_ms - start + s.duration_ns / 1e6),
+  const list = useRef<HTMLUListElement>(null);
+  const pendingFocus = useRef<string | null>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const rowHeight = 50;
+  const viewportHeight = 500;
+  const overscan = 4;
+  const first = Math.min(
+    Math.max(0, rows.length - 1),
+    Math.max(0, Math.floor(scrollTop / rowHeight) - overscan),
   );
+  const end = Math.min(rows.length, Math.ceil((scrollTop + viewportHeight) / rowHeight) + overscan);
+  const { start, total, orphaned } = useMemo(() => {
+    let start = Infinity;
+    let end = -Infinity;
+    const ids = new Set(spans.map((span) => span.span_id));
+    let orphaned = false;
+    for (const span of spans) {
+      start = Math.min(start, span.start_time_unix_ms);
+      end = Math.max(end, span.start_time_unix_ms + span.duration_ns / 1e6);
+      if (span.parent_span_id && !ids.has(span.parent_span_id)) orphaned = true;
+    }
+    return {
+      start: spans.length ? start : 0,
+      total: spans.length ? Math.max(0.001, end - start) : 0.001,
+      orphaned,
+    };
+  }, [spans]);
+  useLayoutEffect(() => {
+    if (pendingFocus.current) {
+      refs.current.get(pendingFocus.current)?.focus({ preventScroll: true });
+      pendingFocus.current = null;
+    }
+  });
+  function selectRow(index: number) {
+    const id = rows[index]!.span.span_id;
+    const top = index * rowHeight;
+    const currentTop = list.current?.scrollTop ?? 0;
+    const nextTop =
+      top < currentTop
+        ? top
+        : top + rowHeight > currentTop + viewportHeight
+          ? top + rowHeight - viewportHeight
+          : currentTop;
+    pendingFocus.current = id;
+    if (list.current) list.current.scrollTop = nextTop;
+    setScrollTop(nextTop);
+    onSelect(id);
+    refs.current.get(id)?.focus({ preventScroll: true });
+  }
   function toggle(id: string) {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -38,87 +82,110 @@ export function SpanWaterfall({
         </div>
         <span>Duration</span>
       </div>
-      <ul className="span-list" aria-label="Execution spans">
-        {rows.map(({ span, depth, hasChildren, descendantsHaveErrors }, index) => {
-          const left = Math.min(99, Math.max(0, ((span.start_time_unix_ms - start) / total) * 100));
-          const width = Math.min(100 - left, Math.max(0.5, (span.duration_ns / 1e6 / total) * 100));
-          return (
-            <li
-              key={span.span_id}
-              className={`span-row ${selected === span.span_id ? 'selected' : ''} ${descendantsHaveErrors ? 'has-error' : ''}`}
-            >
-              <div className="span-label" style={{ paddingLeft: 12 + depth * 18 }}>
-                {hasChildren ? (
-                  <button
-                    className="fold icon-button"
-                    aria-label={`${collapsed.has(span.span_id) ? 'Expand' : 'Collapse'} ${span.name}`}
-                    aria-expanded={!collapsed.has(span.span_id)}
-                    onClick={() => toggle(span.span_id)}
-                  >
-                    {collapsed.has(span.span_id) ? (
-                      <ChevronRight size={13} />
-                    ) : (
-                      <ChevronDown size={13} />
-                    )}
-                  </button>
-                ) : (
-                  <span className="fold-placeholder" />
-                )}
-                <button
-                  ref={(node) => {
-                    if (node) refs.current.set(span.span_id, node);
-                    else refs.current.delete(span.span_id);
-                  }}
-                  className="select-span"
-                  aria-label={`${span.name}${descendantsHaveErrors ? ' Error' : ''}`}
-                  aria-pressed={selected === span.span_id}
-                  onClick={() => onSelect(span.span_id)}
-                  onKeyDown={(e) => {
-                    let target: number | undefined;
-                    if (e.key === 'ArrowDown') target = Math.min(rows.length - 1, index + 1);
-                    if (e.key === 'ArrowUp') target = Math.max(0, index - 1);
-                    if (e.key === 'Home') target = 0;
-                    if (e.key === 'End') target = rows.length - 1;
-                    if (e.key === 'ArrowLeft' && hasChildren) {
-                      e.preventDefault();
-                      if (!collapsed.has(span.span_id)) toggle(span.span_id);
-                    }
-                    if (e.key === 'ArrowRight' && hasChildren) {
-                      e.preventDefault();
-                      if (collapsed.has(span.span_id)) toggle(span.span_id);
-                    }
-                    if (target !== undefined) {
-                      e.preventDefault();
-                      const id = rows[target]!.span.span_id;
-                      onSelect(id);
-                      refs.current.get(id)?.focus();
-                    }
-                  }}
-                  title={span.name}
-                >
-                  <span className={`kind-dot ${span.kind}`} />
-                  <span className="span-name">{span.name}</span>
-                  {descendantsHaveErrors && <span className="error-word">Error</span>}
-                </button>
-              </div>
-              <button
-                className="lane"
-                aria-label={`Select ${span.name}, ${duration(span.duration_ns)}`}
-                onClick={() => onSelect(span.span_id)}
+      <ul
+        ref={list}
+        className="span-list"
+        aria-label="Execution spans"
+        data-total-spans={rows.length}
+        onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+      >
+        {first > 0 && (
+          <li role="presentation" aria-hidden="true" style={{ height: first * rowHeight }} />
+        )}
+        {rows
+          .slice(first, end)
+          .map(({ span, depth, hasChildren, descendantsHaveErrors }, offset) => {
+            const index = first + offset;
+            const left = Math.min(
+              99,
+              Math.max(0, ((span.start_time_unix_ms - start) / total) * 100),
+            );
+            const width = Math.min(
+              100 - left,
+              Math.max(0.5, (span.duration_ns / 1e6 / total) * 100),
+            );
+            return (
+              <li
+                key={span.span_id}
+                aria-posinset={index + 1}
+                aria-setsize={rows.length}
+                className={`span-row ${selected === span.span_id ? 'selected' : ''} ${descendantsHaveErrors ? 'has-error' : ''}`}
               >
-                <span
-                  className={`bar ${span.kind} ${span.status === 'error' ? 'error' : ''}`}
-                  style={{ left: `${left}%`, width: `${width}%` }}
-                />
-              </button>
-              <span className="span-duration mono">{duration(span.duration_ns)}</span>
-            </li>
-          );
-        })}
+                <div className="span-label" style={{ paddingLeft: 12 + depth * 18 }}>
+                  {hasChildren ? (
+                    <button
+                      className="fold icon-button"
+                      aria-label={`${collapsed.has(span.span_id) ? 'Expand' : 'Collapse'} ${span.name}`}
+                      aria-expanded={!collapsed.has(span.span_id)}
+                      onClick={() => toggle(span.span_id)}
+                    >
+                      {collapsed.has(span.span_id) ? (
+                        <ChevronRight size={13} />
+                      ) : (
+                        <ChevronDown size={13} />
+                      )}
+                    </button>
+                  ) : (
+                    <span className="fold-placeholder" />
+                  )}
+                  <button
+                    ref={(node) => {
+                      if (node) refs.current.set(span.span_id, node);
+                      else refs.current.delete(span.span_id);
+                    }}
+                    className="select-span"
+                    aria-label={`${span.name}${descendantsHaveErrors ? ' Error' : ''}`}
+                    aria-pressed={selected === span.span_id}
+                    onClick={() => onSelect(span.span_id)}
+                    onKeyDown={(e) => {
+                      let target: number | undefined;
+                      if (e.key === 'ArrowDown') target = Math.min(rows.length - 1, index + 1);
+                      if (e.key === 'ArrowUp') target = Math.max(0, index - 1);
+                      if (e.key === 'Home') target = 0;
+                      if (e.key === 'End') target = rows.length - 1;
+                      if (e.key === 'ArrowLeft' && hasChildren) {
+                        e.preventDefault();
+                        if (!collapsed.has(span.span_id)) toggle(span.span_id);
+                      }
+                      if (e.key === 'ArrowRight' && hasChildren) {
+                        e.preventDefault();
+                        if (collapsed.has(span.span_id)) toggle(span.span_id);
+                      }
+                      if (target !== undefined) {
+                        e.preventDefault();
+                        selectRow(target);
+                      }
+                    }}
+                    title={span.name}
+                  >
+                    <span className={`kind-dot ${span.kind}`} />
+                    <span className="span-name">{span.name}</span>
+                    {descendantsHaveErrors && <span className="error-word">Error</span>}
+                  </button>
+                </div>
+                <button
+                  className="lane"
+                  aria-label={`Select ${span.name}, ${duration(span.duration_ns)}`}
+                  onClick={() => onSelect(span.span_id)}
+                >
+                  <span
+                    className={`bar ${span.kind} ${span.status === 'error' ? 'error' : ''}`}
+                    style={{ left: `${left}%`, width: `${width}%` }}
+                  />
+                </button>
+                <span className="span-duration mono">{duration(span.duration_ns)}</span>
+              </li>
+            );
+          })}
+        {end < rows.length && (
+          <li
+            role="presentation"
+            aria-hidden="true"
+            style={{ height: (rows.length - end) * rowHeight }}
+          />
+        )}
       </ul>
-      {spans.some(
-        (s) => s.parent_span_id && !spans.some((p) => p.span_id === s.parent_span_id),
-      ) && <p className="notice">Some parent spans have not arrived yet.</p>}
+      {orphaned && <p className="notice">Some parent spans have not arrived yet.</p>}
       <div className="timeline-legend">
         <span>
           <i className="kind-dot agent" />
@@ -136,4 +203,4 @@ export function SpanWaterfall({
       </div>
     </div>
   );
-}
+});

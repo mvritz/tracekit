@@ -13,3 +13,5 @@ Replay fixtures use a separate finalization endpoint and tables. A finalization 
 The dashboard polls every two seconds through TanStack Query. It never reads the DB directly. Hierarchical span buttons support Up/Down/Home/End selection and Left/Right folding. Orphans remain visible. Original/replay comparisons match hierarchy plus same-name occurrence; they are a diagnostic comparison, not a proof of equivalent program behavior. Timing in replay includes substitutions rather than live IO.
 
 See the [ADRs](adr), [protocol](protocol.md), [SDK reference](sdk.md), and [privacy boundaries](privacy.md). Full OpenTelemetry ingest/export and distributed context propagation are deferred.
+
+Dashboard span rendering uses a fixed-height window with keyboard-aware scrolling; full trace data is fetched and validated but only visible rows and overscan mount. Completed-trace summary polling detects changed span counts without repeatedly downloading unchanged span bodies. The collector's span read path validates stored canonical JSON as borrowed raw JSON and serializes those raw values, preserving the same response contract while avoiding repeated object allocation.

@@ -38,13 +38,13 @@ export const duration = (ns: number) =>
     : ns < 1e9
       ? `${(ns / 1e6).toFixed(1)} ms`
       : `${(ns / 1e9).toFixed(2)} s`;
-export const time = (ms: number) =>
-  new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(ms);
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+});
+export const time = (ms: number) => timeFormatter.format(ms);
 export const fullTime = (ms: number) => new Date(ms).toLocaleString();
 export type TreeRow = {
   span: SpanEnvelope;
@@ -55,38 +55,54 @@ export type TreeRow = {
 export function treeRows(spans: SpanEnvelope[], collapsed: Set<string> = new Set()): TreeRow[] {
   const byId = new Map(spans.map((s) => [s.span_id, s]));
   const children = new Map<string, SpanEnvelope[]>();
-  for (const s of spans) {
-    const parent = s.parent_span_id && byId.has(s.parent_span_id) ? s.parent_span_id : '';
-    children.set(parent, [...(children.get(parent) ?? []), s]);
+  for (const span of spans) {
+    const parent = span.parent_span_id && byId.has(span.parent_span_id) ? span.parent_span_id : '';
+    const siblings = children.get(parent);
+    if (siblings) siblings.push(span);
+    else children.set(parent, [span]);
   }
-  for (const list of children.values())
-    list.sort(
+  for (const siblings of children.values())
+    siblings.sort(
       (a, b) => a.start_time_unix_ms - b.start_time_unix_ms || a.span_id.localeCompare(b.span_id),
     );
-  const rows: TreeRow[] = [];
+  // Iterative traversal avoids recursion limits and repeated subtree scans.
+  const rows: (TreeRow & { visible: boolean })[] = [];
+  const indexed = new Map<string, TreeRow>();
   const visited = new Set<string>();
-  const hasError = (s: SpanEnvelope, seen = new Set<string>()): boolean => {
-    if (seen.has(s.span_id)) return false;
-    seen.add(s.span_id);
-    return s.status === 'error' || (children.get(s.span_id) ?? []).some((c) => hasError(c, seen));
-  };
-  const walk = (list: SpanEnvelope[], depth: number) => {
-    for (const span of list) {
-      if (visited.has(span.span_id)) continue;
-      visited.add(span.span_id);
-      const child = children.get(span.span_id) ?? [];
-      rows.push({
-        span,
-        depth,
-        descendantsHaveErrors: hasError(span),
-        hasChildren: child.length > 0,
+  const stack = [...(children.get('') ?? [])]
+    .reverse()
+    .map((span) => ({ span, depth: 0, visible: true }));
+  while (stack.length) {
+    const { span, depth, visible } = stack.pop()!;
+    if (visited.has(span.span_id)) continue;
+    visited.add(span.span_id);
+    const child = children.get(span.span_id) ?? [];
+    const row = {
+      span,
+      depth: Math.min(depth, 32),
+      visible,
+      hasChildren: child.length > 0,
+      descendantsHaveErrors: span.status === 'error',
+    };
+    rows.push(row);
+    indexed.set(span.span_id, row);
+    for (let i = child.length - 1; i >= 0; i--)
+      stack.push({
+        span: child[i]!,
+        depth: depth + 1,
+        visible: visible && !collapsed.has(span.span_id),
       });
-      if (!collapsed.has(span.span_id) && depth < 32) walk(child, depth + 1);
+  }
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const row = rows[i]!;
+    if (row.descendantsHaveErrors && row.span.parent_span_id) {
+      const parent = indexed.get(row.span.parent_span_id);
+      if (parent) parent.descendantsHaveErrors = true;
     }
-  };
-  walk(children.get('') ?? [], 0);
-  return rows;
+  }
+  return rows.filter((row) => row.visible);
 }
+
 export function matchedSpans(original: SpanEnvelope[], replay: SpanEnvelope[]) {
   const paths = (spans: SpanEnvelope[]) => {
     const byId = new Map(spans.map((s) => [s.span_id, s]));

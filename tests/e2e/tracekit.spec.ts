@@ -4,12 +4,19 @@ import { readFileSync } from 'node:fs';
 import { randomBytes, randomUUID } from 'node:crypto';
 let recorded = '';
 let failed = '';
+let privacyTrace = '';
+import { syntheticBatch } from '../../scripts/synthetic.js';
 test.beforeAll(() => {
-  const output = execFileSync('pnpm', ['smoke'], { encoding: 'utf8' });
+  const output = execFileSync('bun', ['run', 'smoke'], { encoding: 'utf8' });
   const line = output.trim().split('\n').at(-1)!;
-  const result = JSON.parse(line) as { recorded: string; failedTrace: string };
+  const result = JSON.parse(line) as {
+    recorded: string;
+    failedTrace: string;
+    privacyTrace: string;
+  };
   recorded = result.recorded;
   failed = result.failedTrace;
+  privacyTrace = result.privacyTrace;
 });
 test('real API traces appear and filters work', async ({ page }) => {
   await page.goto('/');
@@ -125,4 +132,72 @@ test('overview chart, mode controls and mobile header remain usable', async ({ p
   await page.locator('.chart-column').first().click();
   await expect(page.getByRole('heading', { name: 'Execution waterfall' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('privacy-check explains a callback with no return value', async ({ page }) => {
+  await page.goto(`/#trace=${privacyTrace}`);
+  await page.getByRole('tab', { name: 'Output', exact: true }).click();
+  await expect(page.getByText('No return value', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'safe-values', exact: true }).click();
+  await expect(page.locator('.json')).toContainText('[REDACTED]');
+});
+test('large waterfall stays bounded, scrolls, jumps with keyboard and stops downloading unchanged spans', async ({
+  page,
+  request,
+}) => {
+  const batch = syntheticBatch(1000);
+  for (let i = 0; i < batch.spans.length; i += 100) {
+    expect(
+      (
+        await request.post('http://127.0.0.1:4319/v1/ingest/spans', {
+          data: { ...batch, spans: batch.spans.slice(i, i + 100) },
+        })
+      ).ok(),
+    ).toBe(true);
+  }
+  let downloads = 0;
+  page.on('request', (request) => {
+    if (request.url().endsWith(`/traces/${batch.run.trace_id}/spans`)) downloads++;
+  });
+  await page.goto(`/#trace=${batch.run.trace_id}`);
+  await expect(page.locator('.span-list')).toHaveAttribute('data-total-spans', '1000');
+  expect(await page.locator('.span-row').count()).toBeLessThan(30);
+  const root = page.getByRole('button', { name: 'synthetic-benchmark-1000', exact: true });
+  await root.press('End');
+  await expect(page.locator('.select-span').last()).toBeFocused();
+  await expect(page.locator('.span-row').last()).toHaveAttribute('aria-posinset', '1000');
+  await page.locator('.select-span').last().press('Home');
+  await expect(root).toBeFocused();
+  await expect.poll(() => page.locator('.span-list').evaluate((el) => el.scrollTop)).toBe(0);
+  // Wait for two real summary polling cycles, not a timer-only assertion.
+  for (let i = 0; i < 2; i++)
+    await page.waitForResponse((response) =>
+      response.url().endsWith(`/traces/${batch.run.trace_id}`),
+    );
+  expect(downloads).toBe(1);
+  // A late child is picked up by summary polling, even after the root completed.
+  const late = { ...batch.spans[1]!, span_id: randomBytes(8).toString('hex'), name: 'late-child' };
+  expect(
+    (
+      await request.post('http://127.0.0.1:4319/v1/ingest/spans', {
+        data: { ...batch, spans: [late] },
+      })
+    ).ok(),
+  ).toBe(true);
+  await expect(page.locator('.span-list')).toHaveAttribute('data-total-spans', '1001');
+  expect(downloads).toBe(2);
+});
+
+test('completed traces recover when their initial span fetch fails', async ({ page }) => {
+  let attempts = 0;
+  await page.route(`http://127.0.0.1:4319/v1/traces/${failed}/spans`, async (route) => {
+    attempts++;
+    if (attempts <= 2) await route.abort();
+    else await route.continue();
+  });
+  await page.goto(`/#trace=${failed}`);
+  await expect(
+    page.getByRole('button', { name: 'validate-citations Error', exact: true }),
+  ).toBeVisible({ timeout: 10000 });
+  expect(attempts).toBeGreaterThanOrEqual(3);
 });

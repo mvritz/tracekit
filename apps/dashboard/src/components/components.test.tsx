@@ -64,3 +64,62 @@ it('matches repeated span names by hierarchy and occurrence', () => {
   expect(rows[2]?.replay).toBeUndefined();
   expect(treeRows([root, a], new Set([root.span_id]))).toHaveLength(1);
 });
+it('explains undefined separately from a literal marker, null and disabled capture', () => {
+  const { rerender } = render(
+    <SpanInspector
+      span={{ ...root, payload: { output: '[undefined]', output_state: 'undefined' } }}
+    />,
+  );
+  fireEvent.click(screen.getByRole('tab', { name: 'Output' }));
+  expect(screen.getByText('No return value')).toBeVisible();
+  rerender(
+    <SpanInspector span={{ ...root, payload: { output: '[undefined]', output_state: 'value' } }} />,
+  );
+  expect(screen.queryByText('No return value')).not.toBeInTheDocument();
+  expect(screen.getByText('"[undefined]"')).toBeVisible();
+  rerender(<SpanInspector span={{ ...root, payload: { output: '[undefined]' } }} />);
+  expect(screen.getByText(/This older capture/)).toBeVisible();
+  rerender(<SpanInspector span={{ ...root, payload: { output: null, output_state: 'value' } }} />);
+  expect(screen.getByText('null')).toBeVisible();
+  rerender(<SpanInspector span={root} />);
+  expect(screen.getByText('Not captured')).toBeVisible();
+});
+it('windows ten thousand spans and supports keyboard jumps beyond the mounted rows', () => {
+  const spans = [
+    root,
+    ...Array.from({ length: 9999 }, (_, i) => ({
+      ...root,
+      name: `child-${i}`,
+      span_id: (i + 3).toString(16).padStart(16, '0'),
+      start_time_unix_ms: i + 2,
+      parent_span_id: root.span_id,
+    })),
+  ];
+  const onSelect = vi.fn();
+  render(<SpanWaterfall spans={spans} selected={root.span_id} onSelect={onSelect} />);
+  expect(document.querySelectorAll('.span-row').length).toBeLessThan(30);
+  fireEvent.keyDown(screen.getByRole('button', { name: 'agent' }), { key: 'End' });
+  const last = screen.getByRole('button', { name: 'child-9998' });
+  expect(last).toHaveFocus();
+  expect(onSelect).toHaveBeenLastCalledWith(spans.at(-1)!.span_id);
+  fireEvent.keyDown(last, { key: 'Home' });
+  expect(screen.getByRole('button', { name: 'agent' })).toHaveFocus();
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse agent' }));
+  expect(document.querySelectorAll('.span-row')).toHaveLength(1);
+});
+it('retains very deep descendants and propagates errors without recursion', () => {
+  const spans = [
+    root,
+    ...Array.from({ length: 9999 }, (_, i) => ({
+      ...root,
+      span_id: (i + 3).toString(16).padStart(16, '0'),
+      parent_span_id: i === 0 ? root.span_id : (i + 2).toString(16).padStart(16, '0'),
+      status: i === 9998 ? ('error' as const) : ('ok' as const),
+    })),
+  ];
+  const rows = treeRows(spans);
+  expect(rows).toHaveLength(10000);
+  expect(rows[0]?.descendantsHaveErrors).toBe(true);
+  expect(rows.at(-1)?.depth).toBe(32);
+  expect(treeRows(spans, new Set([root.span_id]))).toHaveLength(1);
+});
